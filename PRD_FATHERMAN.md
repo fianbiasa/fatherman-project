@@ -170,7 +170,7 @@ Dashboard terpusat untuk Admin dan CS mengelola semua order: melihat status, fol
 #### AC-08: Follow-up WA
 - [ ] Template WA yang bisa dikustomisasi per status
 - [ ] Klik tombol "Kirim WA" → buka link WA dengan pesan ter-pre-fill
-- [ ] Atau integrasi WA API (Fonnte/WA Business API) untuk kirim otomatis
+- [ ] Atau integrasi WA API (StarSender/WA Business API) untuk kirim otomatis
 - [ ] Log waktu terakhir follow-up
 
 #### AC-09: Dashboard Summary
@@ -219,7 +219,7 @@ PENDING_PAYMENT
 | Order baru masuk | Admin/CS | Notifikasi internal |
 
 #### 4.1.2 Provider WA
-- **Primary:** Fonnte (lebih mudah setup, WABA)
+- **Primary:** StarSender (lebih mudah setup, WABA)
 - **Fallback:** Twilio WhatsApp / WA Business API langsung
 - Template pesan menggunakan variabel dinamis: `{{nama}}`, `{{no_order}}`, `{{total}}`, `{{link_bayar}}`
 
@@ -254,27 +254,27 @@ PENDING_PAYMENT
 ### 4.4 Payment Gateway — Virtual Account
 
 #### 4.4.1 Provider
-- **Primary:** Midtrans (Snap) — support VA, QRIS, e-wallet, kartu kredit
+- **Primary:** Duitku — support VA, QRIS, e-wallet, kartu kredit
 - **Alternatif:** Xendit (jika volume tinggi, fee lebih hemat)
 
 #### 4.4.2 Metode yang Didukung
 | Metode | Provider |
 |---|---|
-| Virtual Account BCA | Midtrans |
-| Virtual Account BRI | Midtrans |
-| Virtual Account BNI | Midtrans |
-| Virtual Account Mandiri | Midtrans |
-| QRIS | Midtrans |
-| GoPay | Midtrans |
-| OVO | Midtrans |
-| ShopeePay | Midtrans |
+| Virtual Account BCA | Duitku |
+| Virtual Account BRI | Duitku |
+| Virtual Account BNI | Duitku |
+| Virtual Account Mandiri | Duitku |
+| QRIS | Duitku |
+| GoPay | Duitku |
+| OVO | Duitku |
+| ShopeePay | Duitku |
 | Transfer Manual | Custom (konfirmasi admin) |
 
 #### 4.4.3 Webhook & Reconciliation
-- Webhook Midtrans diterima di endpoint `/api/payment/callback`
+- Webhook Duitku diterima di endpoint `/api/payment/callback`
 - Signature verification wajib dilakukan sebelum proses
-- Double-check status ke Midtrans API (jangan hanya percaya webhook)
-- Reconciliation harian: bandingkan data order vs data Midtrans
+- Double-check status ke Duitku API (jangan hanya percaya webhook)
+- Reconciliation harian: bandingkan data order vs data Duitku
 
 ---
 

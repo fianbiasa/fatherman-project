@@ -392,10 +392,10 @@ Cek status order (untuk polling halaman thank you).
 ## PAYMENT ENDPOINTS
 
 ### POST /payment/callback
-Webhook dari Midtrans (internal, tidak dipanggil frontend).
+Webhook dari Duitku (internal, tidak dipanggil frontend).
 
-**Headers:** Midtrans sends raw POST with signature
-**Proses:** Verify signature → verify via Midtrans API → update order
+**Headers:** Duitku sends raw POST with signature
+**Proses:** Verify signature → verify via Duitku API → update order
 
 ---
 

@@ -170,7 +170,7 @@ erDiagram
         bigint id PK
         bigint order_id FK
         string payment_ref UK "ref dari gateway"
-        string gateway "midtrans|xendit|manual"
+        string gateway "duitku|xendit|manual"
         enum method "va_bca|va_bri|va_bni|va_mandiri|qris|gopay|ovo|shopeepay|transfer_manual"
         decimal amount
         enum status "pending|success|failed|expired|refunded"
@@ -548,7 +548,7 @@ CREATE TABLE payments (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     order_id BIGINT UNSIGNED NOT NULL,
     payment_ref VARCHAR(255) UNIQUE NOT NULL,
-    gateway ENUM('midtrans','xendit','manual') NOT NULL,
+    gateway ENUM('duitku','xendit','manual') NOT NULL,
     method ENUM(
         'va_bca','va_bri','va_bni','va_mandiri',
         'qris','gopay','ovo','shopeepay','transfer_manual'

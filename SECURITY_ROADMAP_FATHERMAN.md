@@ -57,7 +57,7 @@ POST /auth/login          → max 5 req/menit per IP
 POST /auth/register       → max 3 req/menit per IP
 POST /auth/forgot-password → max 3 req/menit per email
 POST /checkout            → max 10 req/menit per IP
-POST /payment/callback    → tidak rate-limited (whitelist Midtrans IP)
+POST /payment/callback    → tidak rate-limited (whitelist Duitku IP)
 GET  /api/* (public)      → max 60 req/menit per IP
 GET  /api/* (auth)        → max 120 req/menit per user
 /admin/*                  → max 200 req/menit per user
@@ -79,7 +79,7 @@ GET  /api/* (auth)        → max 120 req/menit per user
 | Data | Perlakuan |
 |---|---|
 | Password | bcrypt hash, tidak pernah di-log |
-| API Keys (Midtrans, Fonnte) | Disimpan di `.env`, encrypt di DB jika multi-tenant |
+| API Keys (Duitku, StarSender) | Disimpan di `.env`, encrypt di DB jika multi-tenant |
 | Nomor VA/payment | Tidak di-log seluruhnya (mask sebagian) |
 | Alamat pengiriman | Enkripsi JSON field di DB (jika GDPR compliance) |
 | IP Address login | Di-log untuk security, di-anonymize setelah 90 hari |
@@ -110,20 +110,18 @@ DB::select('SELECT * FROM users WHERE email = ?', [$email]);
 
 ### A.4 Payment Security
 
-#### A.4.1 Webhook Verification (Midtrans)
+#### A.4.1 Webhook Verification (Duitku)
 ```php
-public function verifyMidtransSignature(array $payload): bool
+public function verifyDuitkuSignature(array $payload): bool
 {
-    $orderId    = $payload['order_id'];
-    $statusCode = $payload['status_code'];
-    $grossAmount = $payload['gross_amount'];
-    $serverKey  = config('services.midtrans.server_key');
+    $merchantCode = config('services.duitku.merchant_code');
+    $apiKey       = config('services.duitku.api_key');
+    $amount       = $payload['amount'];
+    $merchantOrderId = $payload['merchantOrderId'];
 
-    $signatureExpected = hash('sha512',
-        $orderId . $statusCode . $grossAmount . $serverKey
-    );
+    $signatureExpected = md5($merchantCode . $amount . $merchantOrderId . $apiKey);
 
-    return hash_equals($signatureExpected, $payload['signature_key']);
+    return hash_equals($signatureExpected, $payload['signature']);
 }
 ```
 
@@ -131,7 +129,7 @@ public function verifyMidtransSignature(array $payload): bool
 ```php
 // Setiap payment callback dicek payment_ref-nya di DB
 // Jika sudah pernah diproses (is_processed = true), skip
-// Ini mencegah double processing jika Midtrans kirim webhook 2x
+// Ini mencegah double processing jika Duitku kirim webhook 2x
 ```
 
 #### A.4.3 Payment Amount Validation
@@ -154,7 +152,7 @@ public function verifyMidtransSignature(array $payload): bool
     'https://member.fatherman.id',
     'https://admin.fatherman.id',
 ],
-// Payment callback webhook dari Midtrans: bypass CORS karena server-to-server
+// Payment callback webhook dari Duitku: bypass CORS karena server-to-server
 ```
 
 #### A.5.2 Security Headers (Nginx)
@@ -163,7 +161,7 @@ add_header X-Frame-Options "SAMEORIGIN";
 add_header X-Content-Type-Options "nosniff";
 add_header X-XSS-Protection "1; mode=block";
 add_header Referrer-Policy "strict-origin-when-cross-origin";
-add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'nonce-{NONCE}' https://app.midtrans.com; ...";
+add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'nonce-{NONCE}' https://passport.duitku.com; ...";
 add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload";
 add_header Permissions-Policy "camera=(), microphone=(), geolocation=()";
 ```
@@ -263,7 +261,7 @@ Total Estimasi: 16 minggu (~4 bulan)
 | Ownership check endpoint | Dev | 1 hari | P0 |
 | Cek ongkir (Raja Ongkir API) + caching | Dev | 1.5 hari | P0 |
 | Checkout endpoint (buat order) | Dev | 3 hari | P0 |
-| Integrasi Midtrans Snap | Dev | 2 hari | P0 |
+| Integrasi Duitku | Dev | 2 hari | P0 |
 | Webhook payment callback + verification | Dev | 2 hari | P0 |
 | Grant product access setelah bayar | Dev | 1 hari | P0 |
 | Kupon/diskon system | Dev | 2 hari | P1 |
@@ -272,7 +270,7 @@ Total Estimasi: 16 minggu (~4 bulan)
 | Halaman checkout (frontend) | FE Dev | 4 hari | P0 |
 | Halaman order status / thank you | FE Dev | 1.5 hari | P0 |
 | Test: checkout flow end-to-end | Dev | 2 hari | P0 |
-| Test: payment sandbox Midtrans | Dev | 1 hari | P0 |
+| Test: payment sandbox Duitku | Dev | 1 hari | P0 |
 
 **Deliverable:** User bisa checkout, bayar, dan akses digital product
 
@@ -288,7 +286,7 @@ Total Estimasi: 16 minggu (~4 bulan)
 | Order detail + timeline API | Dev | 1.5 hari | P0 |
 | Update status + tracking API | Dev | 1 hari | P0 |
 | Follow-up log API | Dev | 1 hari | P0 |
-| Integrasi Fonnte (WA notifikasi) | Dev | 1.5 hari | P0 |
+| Integrasi StarSender (WA notifikasi) | Dev | 1.5 hari | P0 |
 | Integrasi Mailgun (email notifikasi) | Dev | 1.5 hari | P0 |
 | Template notifikasi (WA + email) | Dev | 1 hari | P0 |
 | Queue jobs untuk semua notifikasi | Dev | 1 hari | P0 |
@@ -367,9 +365,9 @@ Total Estimasi: 16 minggu (~4 bulan)
 | VPS (4 vCPU, 8GB RAM) | DigitalOcean / Vultr | $40-60 / ~Rp650rb |
 | Database backup storage | Backblaze B2 | $5 / ~Rp80rb |
 | Email service | Mailgun | $35 / ~Rp560rb (50k email) |
-| WA Notifikasi | Fonnte | Rp100rb-300rb |
+| WA Notifikasi | StarSender | Rp100rb-300rb |
 | CDN + DDoS | Cloudflare Free/Pro | $0-20 |
-| Payment Gateway | Midtrans | 0.7-2% per transaksi |
+| Payment Gateway | Duitku | 0.7-2% per transaksi |
 | Ongkir API | Raja Ongkir Pro | Rp150rb/bulan |
 | SSL | Let's Encrypt | Gratis |
 | Domain | Namecheap / Cloudflare | $15/tahun |
@@ -434,7 +432,7 @@ Sebuah fitur dianggap DONE jika:
 
 | Risiko | Probabilitas | Dampak | Mitigasi |
 |---|---|---|---|
-| Integrasi Midtrans bermasalah | Sedang | Tinggi | Test sandbox menyeluruh, backup metode manual |
+| Integrasi Duitku bermasalah | Sedang | Tinggi | Test sandbox menyeluruh, backup metode manual |
 | Migrasi data aMember korup | Rendah | Tinggi | Backup full sebelum migrasi, dry-run di staging |
 | WA API kena blokir | Sedang | Sedang | Fallback ke email, dokumentasi backup provider |
 | Raja Ongkir down | Sedang | Rendah | Cache agresif, fallback flat rate |

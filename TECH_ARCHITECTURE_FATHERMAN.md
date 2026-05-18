@@ -98,11 +98,11 @@
               │                      │                       │
         ┌─────▼──────┐     ┌─────────▼──────┐     ┌────────▼──────┐
         │ WA Notif   │     │  Email (SMTP)  │     │  Raja Ongkir  │
-        │ (Fonnte)   │     │  (Mailgun)     │     │  / Shipper    │
+        │(StarSender)│     │  (Mailgun)     │     │  / Shipper    │
         └────────────┘     └────────────────┘     └───────────────┘
 
               ┌──────────────────────┐
-              │  Midtrans (Payment)  │
+              │   Duitku (Payment)   │
               │  Webhook → /api/     │
               │  payment/callback    │
               └──────────────────────┘
@@ -122,17 +122,17 @@ Browser ──[HTTPS]──> Cloudflare ──> Nginx ──> Laravel API
     │                                              │
     │                                    Create Order (DB)
     │                                              │
-    │                                    Request Payment to Midtrans
+    │                                    Request Payment to Duitku
     │                                              │
     │ ◄── Return { order_id, payment_url, va } ────┘
     │
     │ User Bayar via Bank/QRIS
     │
-Midtrans ──[Webhook]──> Nginx ──> Laravel /api/payment/callback
+Duitku ──[Webhook]──> Nginx ──> Laravel /api/payment/callback
                                               │
                                     Verify Signature
                                               │
-                                    Verify Status via Midtrans API
+                                    Verify Status via Duitku API
                                               │
                                     Update Order Status
                                               │
@@ -229,7 +229,7 @@ OrderService
 ```php
 // app/Jobs/
 
-SendWANotificationJob         // async - kirim WA via Fonnte
+SendWANotificationJob         // async - kirim WA via StarSender
 SendEmailNotificationJob      // async - kirim email via Mailgun
 GrantProductAccessJob         // after payment - buat product_ownership
 EnrollCourseJob               // enroll user ke course setelah beli
@@ -364,20 +364,23 @@ axios.interceptors.response.use(
 
 ## 6. INTEGRATION ARCHITECTURE
 
-### 6.1 Midtrans Integration
+### 6.1 Duitku Integration
 
 ```
 Laravel App
     │
-    ├── Create Transaction → Midtrans API (server-to-server)
-    │   POST https://app.sandbox.midtrans.com/snap/v1/transactions
-    │   Headers: Authorization: Basic {base64(SERVER_KEY:)}
+    ├── Create Transaction → Duitku API (server-to-server)
+    │   POST https://passport.duitku.com/webapi/api/merchant/v2/inquiry
+    │   Headers: Content-Type: application/json
+    │   Body: { merchantCode, paymentAmount, merchantOrderId, productDetails,
+    │           email, paymentMethod, returnUrl, callbackUrl, signature }
+    │   Signature: MD5(merchantCode + merchantOrderId + paymentAmount + apiKey)
     │
-    ├── Redirect user ke Snap payment page / embed Snap.js
+    ├── Redirect user ke payment URL dari response Duitku
     │
     └── Webhook Handler: POST /api/v1/payment/callback
-        ├── Verify: SHA512(order_id + status_code + gross_amount + SERVER_KEY)
-        ├── Verify status via GET https://api.sandbox.midtrans.com/v2/{order_id}/status
+        ├── Verify: MD5(merchantCode + amount + merchantOrderId + apiKey)
+        ├── Verify status via POST https://passport.duitku.com/webapi/api/merchant/transactionStatus
         └── Process: update DB, grant access, send notif
 ```
 
@@ -397,17 +400,17 @@ Frontend
             └── Store to Redis → return to frontend
 ```
 
-### 6.3 Fonnte WA Integration
+### 6.3 StarSender WA Integration
 
 ```
 Queue Job: SendWANotificationJob
     │
-    └── POST https://api.fonnte.com/send
-        Headers: Authorization: {FONNTE_TOKEN}
+    └── POST https://api.starsender.online/api/send
+        Headers: Authorization: {STARSENDER_API_KEY}
         Body: {
-            target: "628123456789",
-            message: "Halo {{nama}}, order Anda #{{no_order}} telah dikonfirmasi...",
-            countryCode: "62"
+            messageType: "text",
+            to: "628123456789",
+            body: "Halo {{nama}}, order Anda #{{no_order}} telah dikonfirmasi..."
         }
         │
         └── Log result ke notification_logs
