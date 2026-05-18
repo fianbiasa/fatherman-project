@@ -1,0 +1,5 @@
+1. untuk halaman checkout, sekarang kami pakainya di orderonlie. Ada kebutuhan ingin di 1 halaman saja untuk produk fisik maupun digital, dan ini pun juga bisa ngetrack setiap orang itu sudah punya produk apa aja. Tapi saat ingin checkout tidak mau diribetin harus login dulu
+2. Untuk halaman order, kami juga ingin memudahkan admin. Dashboard untuk admin dan CS mudah untuk mendata, memfollow up
+3. Integrasi pemesanan bisa ke banyak hal seperti WA notifikasi, email, cek ongkir, dan pembayaran virtual account
+4. Halaman member area ecourse ingin dibuat lebih mudah diakses dan mudah loginnya. Sekarang posisinya member harus login di 2 aplikasi, wordpress dan amember. Ingin dimudahkan dan member pun juga mudah untuk pesan sendiri ke halamannya
+5. Untuk halaman ecourse, kami juga butuh dashboard admin yang bisa mengecek dengan mudah progres setiap member dalam mengakses
